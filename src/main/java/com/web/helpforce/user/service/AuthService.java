@@ -21,6 +21,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
+    // test
     @Transactional
     public LoginResponseDto login(LoginRequestDto requestDto) {
         // 1. 이메일로 사용자 찾기
