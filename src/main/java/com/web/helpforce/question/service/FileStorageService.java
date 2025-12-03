@@ -26,10 +26,13 @@ public class FileStorageService {
                 throw new IllegalArgumentException("파일 크기는 10MB를 초과할 수 없습니다.");
             }
 
+            log.info("파일 저장 시작: {}, 크기: {}", file.getOriginalFilename(), file.getSize());
+
             // 업로드 디렉토리 생성
             Path uploadPath = Paths.get(uploadDir);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
+                log.info("업로드 디렉토리 생성: {}", uploadPath.toAbsolutePath());
             }
 
             // 파일명 생성 (UUID + 원본 파일명)
@@ -39,6 +42,8 @@ public class FileStorageService {
             // 파일 저장
             Path targetLocation = uploadPath.resolve(filename);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+
+            log.info("파일 저장 완료: {}", targetLocation.toAbsolutePath());
 
             // URL 형태로 반환 (실제로는 CDN URL 또는 서버 URL로 반환)
             return "/uploads/" + filename;

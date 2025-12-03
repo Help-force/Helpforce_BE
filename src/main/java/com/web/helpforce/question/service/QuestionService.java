@@ -1,11 +1,20 @@
 package com.web.helpforce.question.service;
 
+import com.web.helpforce.question.dto.QuestionCreateRequest;
+import com.web.helpforce.question.dto.QuestionCreateResponse;
 import com.web.helpforce.question.dto.QuestionListPageResponse;
 import com.web.helpforce.question.dto.QuestionListResponse;
+import com.web.helpforce.question.entity.Attachment;
 import com.web.helpforce.question.entity.Question;
+import com.web.helpforce.question.entity.QuestionTag;
+import com.web.helpforce.question.entity.Tag;
+import com.web.helpforce.question.repository.AttachmentRepository;
 import com.web.helpforce.question.repository.QuestionRepository;
+import com.web.helpforce.question.repository.TagRepository;
+import com.web.helpforce.user.entity.User;
 import com.web.helpforce.user.repository.AnswerRepository;
 import com.web.helpforce.user.repository.QuestionBookmarkRepository;
+import com.web.helpforce.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,6 +23,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +37,10 @@ public class QuestionService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final QuestionBookmarkRepository questionBookmarkRepository;
+    private final TagRepository tagRepository;
+    private final AttachmentRepository attachmentRepository;
+    private final FileStorageService fileStorageService;
+    private final UserRepository userRepository;
 
     public QuestionListPageResponse getQuestions(
             List<Long> tagIds,
@@ -115,5 +131,97 @@ public class QuestionService {
             return Sort.by(Sort.Direction.DESC, "views");
         }
         return Sort.by(Sort.Direction.DESC, "createdAt");
+    }
+
+    @Transactional
+    public QuestionCreateResponse createQuestion(QuestionCreateRequest request, Long userId) {
+        // 1. 제목 필수 검증
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("제목은 필수 입력 항목입니다.");
+        }
+
+        // 2. 내용 길이 검증
+        if (request.getBody() == null || request.getBody().length() < 10) {
+            throw new IllegalArgumentException("질문 내용은 10자 이상 작성해주세요.");
+        }
+
+        // 3. 사용자 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        // 4. Question 엔티티 생성
+        Question question = Question.builder()
+                .user(user)
+                .title(request.getTitle())
+                .body(request.getBody())
+                .status("open")
+                .views(0)
+                .isDeleted(false)
+                .questionTags(new ArrayList<>())
+                .attachments(new ArrayList<>())
+                .build();
+
+        // 5. 태그 연결
+        if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
+            List<Tag> tags = tagRepository.findByIdIn(request.getTagIds());
+
+            for (Tag tag : tags) {
+                QuestionTag questionTag = QuestionTag.builder()
+                        .question(question)
+                        .tag(tag)
+                        .build();
+                question.getQuestionTags().add(questionTag);
+            }
+        }
+
+        // 6. 파일 첨부 처리
+        List<QuestionCreateResponse.AttachmentDto> attachmentDtos = new ArrayList<>();
+        if (request.getFiles() != null && !request.getFiles().isEmpty()) {
+            System.out.println("=== 파일 개수: " + request.getFiles().size());
+            for (MultipartFile file : request.getFiles()) {
+                System.out.println("=== 파일 처리: " + file.getOriginalFilename() + ", isEmpty: " + file.isEmpty());
+                if (!file.isEmpty()) {
+                    // 파일 저장
+                    String fileUrl = fileStorageService.storeFile(file);
+                    System.out.println("=== 파일 URL: " + fileUrl);
+
+                    // Attachment 엔티티 생성
+                    Attachment attachment = Attachment.builder()
+                            .question(question)
+                            .fileUrl(fileUrl)
+                            .mimeType(file.getContentType())
+                            .build();
+
+                    question.getAttachments().add(attachment);
+                    System.out.println("=== Attachment 추가 완료, 현재 개수: " + question.getAttachments().size());
+
+                    // 응답 DTO 추가 (임시 ID, 실제로는 저장 후 ID 할당)
+                    attachmentDtos.add(QuestionCreateResponse.AttachmentDto.of(null, fileUrl));
+                }
+            }
+        }
+
+        // 7. DB 저장 (Question 먼저 저장)
+        System.out.println("=== 저장 전 Attachments 개수: " + question.getAttachments().size());
+        System.out.println("=== 저장 전 QuestionTags 개수: " + question.getQuestionTags().size());
+        Question savedQuestion = questionRepository.save(question);
+        System.out.println("=== 저장 후 Attachments 개수: " + savedQuestion.getAttachments().size());
+        System.out.println("=== 저장 후 QuestionTags 개수: " + savedQuestion.getQuestionTags().size());
+
+        // 8. 첨부파일 DTO 생성
+        attachmentDtos.clear();
+        for (Attachment attachment : savedQuestion.getAttachments()) {
+            attachmentDtos.add(QuestionCreateResponse.AttachmentDto.of(
+                    attachment.getId(),
+                    attachment.getFileUrl()
+            ));
+        }
+
+        // 9. 응답 반환
+        return QuestionCreateResponse.of(
+                savedQuestion.getId(),
+                savedQuestion.getCreatedAt(),
+                attachmentDtos
+        );
     }
 }
