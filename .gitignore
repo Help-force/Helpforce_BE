@@ -37,4 +37,7 @@ out/
 .vscode/
 
 # Local configuration
-**/application-local.yml
+**/application.yml
+
+# Uploaded files
+uploads/
