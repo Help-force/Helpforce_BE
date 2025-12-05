@@ -1,10 +1,10 @@
-package com.web.helpforce.question.controller;
+package com.web.helpforce.domain.question.controller;
 
-import com.web.helpforce.question.dto.QuestionCreateRequest;
-import com.web.helpforce.question.dto.QuestionCreateResponse;
-import com.web.helpforce.question.dto.QuestionListPageResponse;
-import com.web.helpforce.question.service.QuestionService;
-import com.web.helpforce.user.dto.SuccessResponse;
+import com.web.helpforce.domain.question.dto.QuestionCreateRequest;
+import com.web.helpforce.domain.question.dto.QuestionCreateResponse;
+import com.web.helpforce.domain.question.dto.QuestionListPageResponse;
+import com.web.helpforce.domain.question.service.QuestionService;
+import com.web.helpforce.domain.user.dto.SuccessResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

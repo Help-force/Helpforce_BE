@@ -1,4 +1,4 @@
-package com.web.helpforce.domain.question.repository;
+package com.web.helpforce.domain.tag.repository;
 
 import com.web.helpforce.domain.tag.entity.Tag;
 import org.springframework.data.jpa.repository.JpaRepository;

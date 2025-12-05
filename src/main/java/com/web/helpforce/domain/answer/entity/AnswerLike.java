@@ -1,6 +1,6 @@
-package com.web.helpforce.question.entity;
+package com.web.helpforce.domain.answer.entity;
 
-import com.web.helpforce.user.entity.User;
+import com.web.helpforce.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

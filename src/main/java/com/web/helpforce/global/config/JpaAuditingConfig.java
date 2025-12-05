@@ -1,4 +1,4 @@
-package com.web.helpforce.config;
+package com.web.helpforce.global.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;

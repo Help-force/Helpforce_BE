@@ -1,4 +1,4 @@
-package com.web.helpforce.question.dto;
+package com.web.helpforce.domain.question.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

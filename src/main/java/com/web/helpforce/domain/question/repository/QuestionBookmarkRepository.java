@@ -1,6 +1,6 @@
-package com.web.helpforce.user.repository;
+package com.web.helpforce.domain.question.repository;
 
-import com.web.helpforce.question.entity.QuestionBookmark;
+import com.web.helpforce.domain.question.entity.QuestionBookmark;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,4 +1,4 @@
-package com.web.helpforce.config;
+package com.web.helpforce.global.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

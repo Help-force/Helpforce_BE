@@ -1,4 +1,4 @@
-package com.web.helpforce.user.entity;
+package com.web.helpforce.domain.user.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

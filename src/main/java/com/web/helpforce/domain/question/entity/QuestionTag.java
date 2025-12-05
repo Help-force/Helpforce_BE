@@ -1,5 +1,6 @@
-package com.web.helpforce.question.entity;
+package com.web.helpforce.domain.question.entity;
 
+import com.web.helpforce.domain.tag.entity.Tag;
 import jakarta.persistence.*;
 import lombok.*;
 

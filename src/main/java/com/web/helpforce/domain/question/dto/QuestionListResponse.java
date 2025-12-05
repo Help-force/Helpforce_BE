@@ -1,4 +1,4 @@
-package com.web.helpforce.question.dto;
+package com.web.helpforce.domain.question.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;

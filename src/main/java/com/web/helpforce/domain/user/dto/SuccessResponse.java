@@ -1,4 +1,4 @@
-package com.web.helpforce.user.dto;
+package com.web.helpforce.domain.user.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

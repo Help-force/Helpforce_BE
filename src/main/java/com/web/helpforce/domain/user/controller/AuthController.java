@@ -1,7 +1,8 @@
-package com.web.helpforce.user.controller;
+package com.web.helpforce.domain.user.controller;
 
-import com.web.helpforce.user.dto.*;
-import com.web.helpforce.user.service.AuthService;
+import com.web.helpforce.domain.user.dto.*;
+// import com.web.helpforce.user.dto.*;
+import com.web.helpforce.domain.user.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -1,12 +1,12 @@
-package com.web.helpforce.user.service;
+package com.web.helpforce.domain.user.service;
 
-import com.web.helpforce.config.JwtTokenProvider;
-import com.web.helpforce.user.dto.LoginRequestDto;
-import com.web.helpforce.user.dto.LoginResponseDto;
-import com.web.helpforce.user.dto.SignupRequestDto;
-import com.web.helpforce.user.dto.SignupResponseDto;
-import com.web.helpforce.user.entity.User;
-import com.web.helpforce.user.repository.UserRepository;
+import com.web.helpforce.global.config.JwtTokenProvider;
+import com.web.helpforce.domain.user.dto.LoginRequestDto;
+import com.web.helpforce.domain.user.dto.LoginResponseDto;
+import com.web.helpforce.domain.user.dto.SignupRequestDto;
+import com.web.helpforce.domain.user.dto.SignupResponseDto;
+import com.web.helpforce.domain.user.entity.User;
+import com.web.helpforce.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

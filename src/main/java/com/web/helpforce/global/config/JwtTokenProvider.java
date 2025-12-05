@@ -1,4 +1,4 @@
-package com.web.helpforce.config;
+package com.web.helpforce.global.config;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;

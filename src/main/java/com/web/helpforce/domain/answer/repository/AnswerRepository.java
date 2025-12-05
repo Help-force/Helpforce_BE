@@ -1,4 +1,4 @@
-package com.web.helpforce.domain.user.repository;
+package com.web.helpforce.domain.answer.repository;
 
 import com.web.helpforce.domain.answer.entity.Answer;
 import org.springframework.data.domain.Page;

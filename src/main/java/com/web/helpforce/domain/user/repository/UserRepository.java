@@ -1,6 +1,6 @@
-package com.web.helpforce.user.repository;
+package com.web.helpforce.domain.user.repository;
 
-import com.web.helpforce.user.entity.User;
+import com.web.helpforce.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
