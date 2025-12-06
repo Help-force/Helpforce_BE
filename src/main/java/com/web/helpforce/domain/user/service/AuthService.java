@@ -1,12 +1,10 @@
 package com.web.helpforce.domain.user.service;
 
+import com.web.helpforce.domain.user.dto.*;
 import com.web.helpforce.global.config.JwtTokenProvider;
-import com.web.helpforce.domain.user.dto.LoginRequestDto;
-import com.web.helpforce.domain.user.dto.LoginResponseDto;
-import com.web.helpforce.domain.user.dto.SignupRequestDto;
-import com.web.helpforce.domain.user.dto.SignupResponseDto;
 import com.web.helpforce.domain.user.entity.User;
 import com.web.helpforce.domain.user.repository.UserRepository;
+import com.web.helpforce.global.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -75,5 +73,19 @@ public class AuthService {
 
         // 6. 응답 반환
         return SignupResponseDto.of(savedUser.getId(), savedUser.getEmail());
+    }
+
+    public UserInfoResponseDto getUserInfo(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다."));
+
+        return UserInfoResponseDto.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .crmGeneration(user.getCrmGeneration())
+                .department(user.getDepartment())
+                .createdAt(user.getCreatedAt())
+                .build();
     }
 }
