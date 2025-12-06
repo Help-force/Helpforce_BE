@@ -25,4 +25,7 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
 
     // 답변 개수 조회
     long countByQuestion_IdAndIsDeletedFalse(Long questionId);
+
+    // 사용자별 답변 조회 (내 질문)
+    Page<Answer> findByUser_IdAndIsDeletedFalseOrderByCreatedAtAsc(Long userId, Pageable pageable);
 }
