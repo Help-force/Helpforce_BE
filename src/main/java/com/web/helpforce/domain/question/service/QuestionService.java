@@ -1,6 +1,8 @@
 package com.web.helpforce.domain.question.service;
 
 import com.web.helpforce.domain.attachment.service.FileStorageService;
+import com.web.helpforce.domain.question.dto.AcceptAnswerRequest;
+import com.web.helpforce.domain.question.dto.AcceptAnswerResponse;
 import com.web.helpforce.domain.question.dto.QuestionCreateRequest;
 import com.web.helpforce.domain.question.dto.QuestionCreateResponse;
 import com.web.helpforce.domain.question.dto.QuestionDeleteResponse;
@@ -9,6 +11,7 @@ import com.web.helpforce.domain.question.dto.QuestionListResponse;
 import com.web.helpforce.domain.question.dto.QuestionUpdateRequest;
 import com.web.helpforce.domain.question.dto.QuestionUpdateResponse;
 import com.web.helpforce.domain.attachment.entity.Attachment;
+import com.web.helpforce.domain.answer.entity.Answer;
 import com.web.helpforce.domain.question.entity.Question;
 import com.web.helpforce.domain.question.entity.QuestionTag;
 import com.web.helpforce.domain.tag.entity.Tag;
@@ -325,5 +328,57 @@ public class QuestionService {
 
         // 6. 응답 반환
         return QuestionDeleteResponse.of("질문이 삭제되었습니다.", true);
+    }
+
+    @Transactional
+    public AcceptAnswerResponse acceptAnswer(Long questionId, AcceptAnswerRequest request, Long userId) {
+        // 1. 질문 조회
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new NotFoundException("질문을 찾을 수 없습니다."));
+
+        // 2. 삭제된 질문인지 확인
+        if (question.getIsDeleted()) {
+            throw new NotFoundException("질문을 찾을 수 없습니다.");
+        }
+
+        // 3. 질문 작성자 권한 확인
+        if (!question.getUser().getId().equals(userId)) {
+            throw new ForbiddenException("자신의 질문에만 답변을 채택할 수 있습니다.");
+        }
+
+        // 4. 이미 채택된 답변이 있는지 확인
+        if (question.getAcceptedAnswerId() != null) {
+            throw new ConflictException("이미 채택된 답변이 있습니다.");
+        }
+
+        // 5. 답변 조회
+        Answer answer = answerRepository.findById(request.getAnswerId())
+                .orElseThrow(() -> new NotFoundException("답변을 찾을 수 없습니다."));
+
+        // 6. 답변이 이 질문에 속한 답변인지 확인
+        if (!answer.getQuestion().getId().equals(questionId)) {
+            throw new IllegalArgumentException("해당 질문의 답변이 아닙니다.");
+        }
+
+        // 7. 삭제된 답변인지 확인
+        if (answer.getIsDeleted()) {
+            throw new NotFoundException("답변을 찾을 수 없습니다.");
+        }
+
+        // 8. 답변 채택 처리
+        answer.setIsAccepted(true);
+        answerRepository.save(answer);
+
+        // 9. 질문에 채택된 답변 ID 저장 및 상태 변경
+        question.setAcceptedAnswerId(answer.getId());
+        question.setStatus("closed");
+        questionRepository.save(question);
+
+        // 10. 응답 반환
+        return AcceptAnswerResponse.of(
+                question.getId(),
+                answer.getId(),
+                "답변이 채택되었습니다."
+        );
     }
 }
