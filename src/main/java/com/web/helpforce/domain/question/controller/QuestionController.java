@@ -5,6 +5,7 @@ import com.web.helpforce.domain.question.dto.AcceptAnswerResponse;
 import com.web.helpforce.domain.question.dto.QuestionCreateRequest;
 import com.web.helpforce.domain.question.dto.QuestionCreateResponse;
 import com.web.helpforce.domain.question.dto.QuestionDeleteResponse;
+import com.web.helpforce.domain.question.dto.QuestionDetailResponse;
 import com.web.helpforce.domain.question.dto.QuestionListPageResponse;
 import com.web.helpforce.domain.question.dto.QuestionUpdateRequest;
 import com.web.helpforce.domain.question.dto.QuestionUpdateResponse;
@@ -116,6 +117,22 @@ public class QuestionController {
         Long currentUserId = (Long) authentication.getPrincipal();
 
         AcceptAnswerResponse response = questionService.acceptAnswer(questionId, request, currentUserId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{questionId}")
+    public ResponseEntity<QuestionDetailResponse> getQuestionDetail(
+            @PathVariable Long questionId,
+            Authentication authentication) {
+
+        // 현재 로그인한 유저 ID (선택적 인증)
+        Long currentUserId = null;
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof Long) {
+            currentUserId = (Long) authentication.getPrincipal();
+        }
+
+        QuestionDetailResponse response = questionService.getQuestionDetail(questionId, currentUserId);
 
         return ResponseEntity.ok(response);
     }

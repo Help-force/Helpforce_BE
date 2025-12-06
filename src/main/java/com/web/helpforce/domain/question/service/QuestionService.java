@@ -6,6 +6,7 @@ import com.web.helpforce.domain.question.dto.AcceptAnswerResponse;
 import com.web.helpforce.domain.question.dto.QuestionCreateRequest;
 import com.web.helpforce.domain.question.dto.QuestionCreateResponse;
 import com.web.helpforce.domain.question.dto.QuestionDeleteResponse;
+import com.web.helpforce.domain.question.dto.QuestionDetailResponse;
 import com.web.helpforce.domain.question.dto.QuestionListPageResponse;
 import com.web.helpforce.domain.question.dto.QuestionListResponse;
 import com.web.helpforce.domain.question.dto.QuestionUpdateRequest;
@@ -21,6 +22,7 @@ import com.web.helpforce.domain.question.repository.QuestionTagRepository;
 import com.web.helpforce.domain.tag.repository.TagRepository;
 import com.web.helpforce.domain.user.entity.User;
 import com.web.helpforce.domain.answer.repository.AnswerRepository;
+import com.web.helpforce.domain.answer.repository.AnswerLikeRepository;
 import com.web.helpforce.domain.question.repository.QuestionBookmarkRepository;
 import com.web.helpforce.domain.user.repository.UserRepository;
 import com.web.helpforce.global.exception.ConflictException;
@@ -47,6 +49,7 @@ public class QuestionService {
 
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
+    private final AnswerLikeRepository answerLikeRepository;
     private final QuestionBookmarkRepository questionBookmarkRepository;
     private final QuestionTagRepository questionTagRepository;
     private final TagRepository tagRepository;
@@ -380,5 +383,120 @@ public class QuestionService {
                 answer.getId(),
                 "답변이 채택되었습니다."
         );
+    }
+
+    public QuestionDetailResponse getQuestionDetail(Long questionId, Long currentUserId) {
+        // 1. 질문 조회
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new NotFoundException("질문을 찾을 수 없습니다."));
+
+        // 2. 삭제된 질문인지 확인
+        if (question.getIsDeleted()) {
+            throw new NotFoundException("질문을 찾을 수 없습니다.");
+        }
+
+        // 3. 질문 정보 생성
+        QuestionDetailResponse.QuestionDto questionDto = buildQuestionDto(question, currentUserId);
+
+        // 4. 답변 목록 조회 (댓글만, parent_answer_id가 null인 것)
+        List<Answer> parentAnswers = answerRepository.findByQuestion_IdAndParentAnswerIdIsNullAndIsDeletedFalse(questionId);
+
+        // 5. 답변 DTO 변환 (대댓글 포함)
+        List<QuestionDetailResponse.AnswerDto> answerDtos = parentAnswers.stream()
+                .map(answer -> buildAnswerDto(answer, currentUserId))
+                .collect(Collectors.toList());
+
+        // 6. 첨부파일 목록 조회
+        List<Attachment> attachments = question.getAttachments();
+        List<QuestionDetailResponse.AttachmentDto> attachmentDtos = attachments.stream()
+                .map(this::buildAttachmentDto)
+                .collect(Collectors.toList());
+
+        // 7. 응답 생성
+        return QuestionDetailResponse.builder()
+                .question(questionDto)
+                .answers(answerDtos)
+                .attachments(attachmentDtos)
+                .build();
+    }
+
+    private QuestionDetailResponse.QuestionDto buildQuestionDto(Question question, Long currentUserId) {
+        // 답변 개수
+        long answerCount = answerRepository.countByQuestion_IdAndIsDeletedFalse(question.getId());
+
+        // 북마크 여부
+        boolean isBookmarked = false;
+        if (currentUserId != null) {
+            isBookmarked = questionBookmarkRepository.existsByQuestion_IdAndUser_Id(
+                    question.getId(), currentUserId);
+        }
+
+        // 태그 ID 목록
+        List<Long> tagIds = question.getQuestionTags().stream()
+                .map(qt -> qt.getTag().getId())
+                .collect(Collectors.toList());
+
+        return QuestionDetailResponse.QuestionDto.builder()
+                .id(question.getId())
+                .title(question.getTitle())
+                .body(question.getBody())
+                .status(question.getStatus())
+                .views(question.getViews())
+                .isBookmarked(isBookmarked)
+                .acceptedAnswerId(question.getAcceptedAnswerId())
+                .createdAt(question.getCreatedAt())
+                .updatedAt(question.getUpdatedAt())
+                .user(QuestionDetailResponse.UserSummary.builder()
+                        .id(question.getUser().getId())
+                        .nickname(question.getUser().getNickname())
+                        .email(question.getUser().getEmail())
+                        .build())
+                .tagIds(tagIds)
+                .answerCount(answerCount)
+                .build();
+    }
+
+    private QuestionDetailResponse.AnswerDto buildAnswerDto(Answer answer, Long currentUserId) {
+        // 좋아요 개수
+        long likeCount = answerLikeRepository.countByAnswer_Id(answer.getId());
+
+        // 좋아요 여부
+        boolean isLiked = false;
+        if (currentUserId != null) {
+            isLiked = answerLikeRepository.existsByAnswer_IdAndUser_Id(answer.getId(), currentUserId);
+        }
+
+        // 대댓글 조회
+        List<Answer> replies = answerRepository.findByParentAnswerIdAndIsDeletedFalse(answer.getId());
+        List<QuestionDetailResponse.AnswerDto> replyDtos = replies.stream()
+                .map(reply -> buildAnswerDto(reply, currentUserId)) // 재귀 호출
+                .collect(Collectors.toList());
+
+        return QuestionDetailResponse.AnswerDto.builder()
+                .id(answer.getId())
+                .body(answer.getBody())
+                .parentAnswerId(answer.getParentAnswerId())
+                .isAccepted(answer.getIsAccepted())
+                .createdAt(answer.getCreatedAt())
+                .updatedAt(answer.getUpdatedAt())
+                .user(QuestionDetailResponse.UserSummary.builder()
+                        .id(answer.getUser().getId())
+                        .nickname(answer.getUser().getNickname())
+                        .email(answer.getUser().getEmail())
+                        .build())
+                .likeCount(likeCount)
+                .isLiked(isLiked)
+                .replies(replyDtos)
+                .build();
+    }
+
+    private QuestionDetailResponse.AttachmentDto buildAttachmentDto(Attachment attachment) {
+        return QuestionDetailResponse.AttachmentDto.builder()
+                .id(attachment.getId())
+                .questionId(attachment.getQuestion() != null ? attachment.getQuestion().getId() : null)
+                .answerId(attachment.getAnswer() != null ? attachment.getAnswer().getId() : null)
+                .fileUrl(attachment.getFileUrl())
+                .mimeType(attachment.getMimeType())
+                .build();
     }
 }
