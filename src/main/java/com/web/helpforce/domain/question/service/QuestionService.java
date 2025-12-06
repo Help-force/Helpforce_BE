@@ -11,6 +11,7 @@ import com.web.helpforce.domain.question.dto.QuestionListPageResponse;
 import com.web.helpforce.domain.question.dto.QuestionListResponse;
 import com.web.helpforce.domain.question.dto.QuestionUpdateRequest;
 import com.web.helpforce.domain.question.dto.QuestionUpdateResponse;
+import com.web.helpforce.domain.question.dto.QuestionViewResponseDto;
 import com.web.helpforce.domain.attachment.entity.Attachment;
 import com.web.helpforce.domain.answer.entity.Answer;
 import com.web.helpforce.domain.question.entity.Question;
@@ -497,6 +498,37 @@ public class QuestionService {
                 .answerId(attachment.getAnswer() != null ? attachment.getAnswer().getId() : null)
                 .fileUrl(attachment.getFileUrl())
                 .mimeType(attachment.getMimeType())
+                .build();
+    }
+
+    /**
+     * 질문 조회수 증가
+     */
+    @Transactional
+    public QuestionViewResponseDto incrementViews(Long questionId, Long userId) {
+        System.out.println("=== Question View Increment Debug ===");
+        System.out.println("questionId: " + questionId);
+        System.out.println("userId: " + userId);
+
+        // 1. 질문 존재 확인
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new NotFoundException("질문을 찾을 수 없습니다."));
+
+        // 2. 삭제된 질문인지 확인
+        if (question.getIsDeleted()) {
+            throw new NotFoundException("삭제된 질문입니다.");
+        }
+
+        // 3. 조회수 증가
+        question.setViews(question.getViews() + 1);
+        questionRepository.save(question);
+
+        System.out.println("✅ 조회수 증가 완료: " + question.getViews());
+
+        // 4. 응답 DTO 생성
+        return QuestionViewResponseDto.builder()
+                .questionId(questionId)
+                .views(question.getViews())
                 .build();
     }
 }
