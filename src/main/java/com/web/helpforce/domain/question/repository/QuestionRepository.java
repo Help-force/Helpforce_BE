@@ -24,4 +24,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     Page<Question> findByTagIdsAndIsDeletedFalse(
             @Param("tagIds") List<Long> tagIds,
             Pageable pageable);
+    // my question 조회 (페이징)
+    Page<Question> findByUser_IdAndIsDeletedFalse(
+            Long userId, Pageable pageable);
 }
