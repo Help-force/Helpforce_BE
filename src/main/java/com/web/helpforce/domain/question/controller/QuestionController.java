@@ -9,6 +9,7 @@ import com.web.helpforce.domain.question.dto.QuestionDetailResponse;
 import com.web.helpforce.domain.question.dto.QuestionListPageResponse;
 import com.web.helpforce.domain.question.dto.QuestionUpdateRequest;
 import com.web.helpforce.domain.question.dto.QuestionUpdateResponse;
+import com.web.helpforce.domain.question.dto.QuestionViewResponseDto;
 import com.web.helpforce.domain.question.service.QuestionService;
 import com.web.helpforce.domain.user.dto.SuccessResponse;
 import com.web.helpforce.global.exception.UnauthorizedException;
@@ -133,6 +134,26 @@ public class QuestionController {
         }
 
         QuestionDetailResponse response = questionService.getQuestionDetail(questionId, currentUserId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * POST /api/questions/{questionId}/views
+     * 질문 조회수 증가
+     */
+    @PostMapping("/{questionId}/views")
+    public ResponseEntity<QuestionViewResponseDto> incrementViews(
+            @PathVariable Long questionId,
+            Authentication authentication) {
+
+        // JWT에서 userId 추출
+        if (authentication == null || !(authentication.getPrincipal() instanceof Long)) {
+            throw new UnauthorizedException("인증이 필요합니다.");
+        }
+        Long currentUserId = (Long) authentication.getPrincipal();
+
+        QuestionViewResponseDto response = questionService.incrementViews(questionId, currentUserId);
 
         return ResponseEntity.ok(response);
     }
