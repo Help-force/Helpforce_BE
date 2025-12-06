@@ -3,6 +3,7 @@ package com.web.helpforce.domain.user.service;
 import com.web.helpforce.domain.question.entity.Question;
 import com.web.helpforce.domain.question.entity.QuestionTag;
 import com.web.helpforce.domain.question.repository.QuestionRepository;
+import com.web.helpforce.domain.user.dto.BookmarkedQuestionsResponse;
 import com.web.helpforce.domain.user.dto.MyAnsweredQuestionsResponse;
 import com.web.helpforce.domain.user.dto.MyQuestionsResponse;
 import com.web.helpforce.domain.user.entity.User;
@@ -181,6 +182,47 @@ public class UserService {
         return MyAnsweredQuestionsResponse.builder()
                 .questions(questionDtos)
                 .pagination(pagination)
+                .build();
+    }
+
+    public BookmarkedQuestionsResponse getBookmarkedQuestions(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<com.web.helpforce.domain.question.entity.QuestionBookmark> bookmarkPage = 
+                questionBookmarkRepository.findByUser_IdOrderByCreatedAtDesc(userId, pageable);
+
+        List<BookmarkedQuestionsResponse.BookmarkedQuestionDto> bookmarks = bookmarkPage.getContent().stream()
+                .map(bookmark -> {
+                    Question question = bookmark.getQuestion();
+                    return BookmarkedQuestionsResponse.BookmarkedQuestionDto.builder()
+                            .id(question.getId())
+                            .title(question.getTitle())
+                            .body(question.getBody())
+                            .status(question.getStatus())
+                            .views(question.getViews())
+                            .acceptedAnswerId(question.getAcceptedAnswerId())
+                            .bookmarkedAt(bookmark.getCreatedAt())
+                            .user(BookmarkedQuestionsResponse.UserSummaryDto.builder()
+                                    .id(question.getUser().getId())
+                                    .nickname(question.getUser().getNickname())
+                                    .build())
+                            .tagIds(question.getQuestionTags().stream()
+                                    .map(qt -> qt.getTag().getId())
+                                    .collect(Collectors.toList()))
+                            .answerCount((long) question.getAnswers().size())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return BookmarkedQuestionsResponse.builder()
+                .bookmarks(bookmarks)
+                .pagination(BookmarkedQuestionsResponse.PaginationDto.builder()
+                        .currentPage(bookmarkPage.getNumber() + 1)
+                        .totalPages(bookmarkPage.getTotalPages())
+                        .totalItems(bookmarkPage.getTotalElements())
+                        .itemsPerPage(bookmarkPage.getSize())
+                        .hasPrevious(bookmarkPage.hasPrevious())
+                        .hasNext(bookmarkPage.hasNext())
+                        .build())
                 .build();
     }
 }
