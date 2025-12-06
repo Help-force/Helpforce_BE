@@ -1,5 +1,7 @@
 package com.web.helpforce.domain.question.controller;
 
+import com.web.helpforce.domain.question.dto.AcceptAnswerRequest;
+import com.web.helpforce.domain.question.dto.AcceptAnswerResponse;
 import com.web.helpforce.domain.question.dto.QuestionCreateRequest;
 import com.web.helpforce.domain.question.dto.QuestionCreateResponse;
 import com.web.helpforce.domain.question.dto.QuestionDeleteResponse;
@@ -97,6 +99,23 @@ public class QuestionController {
         Long currentUserId = (Long) authentication.getPrincipal();
 
         QuestionDeleteResponse response = questionService.deleteQuestion(questionId, currentUserId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{questionId}/accept-answer")
+    public ResponseEntity<AcceptAnswerResponse> acceptAnswer(
+            @PathVariable Long questionId,
+            @RequestBody AcceptAnswerRequest request,
+            Authentication authentication) {
+
+        // JWT에서 userId 추출
+        if (authentication == null || !(authentication.getPrincipal() instanceof Long)) {
+            throw new UnauthorizedException("로그인이 필요합니다.");
+        }
+        Long currentUserId = (Long) authentication.getPrincipal();
+
+        AcceptAnswerResponse response = questionService.acceptAnswer(questionId, request, currentUserId);
 
         return ResponseEntity.ok(response);
     }
