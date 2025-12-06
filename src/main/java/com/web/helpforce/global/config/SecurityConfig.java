@@ -32,6 +32,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()  // 인증 API는 모두 허용
                         .requestMatchers("/h2-console/**").permitAll()  // H2 콘솔도 허용
                         .requestMatchers("/api/questions").permitAll()  // 질문 목록 조회는 허용 (선택적 인증)
+                        .requestMatchers("/api/questions/**").permitAll()  // 질문 관련 API 임시 허용 (테스트용)
                         .anyRequest().authenticated()  // 나머지는 인증 필요
                 )
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))  // H2 콘솔용

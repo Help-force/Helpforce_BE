@@ -105,9 +105,18 @@ public class AnswerService {
 
     @Transactional
     public AnswerDeleteResponseDto deleteAnswer(Long answerId, Long userId) {
+        // 디버깅 로그
+        System.out.println("=== Answer Delete Debug ===");
+        System.out.println("answerId: " + answerId);
+        System.out.println("userId: " + userId);
+        
         // 1. 답변 조회
         Answer answer = answerRepository.findById(answerId)
                 .orElseThrow(() -> new IllegalArgumentException("답변을 찾을 수 없습니다."));
+
+        System.out.println("Found answer - user_id: " + answer.getUser().getId());
+        System.out.println("is_deleted: " + answer.getIsDeleted());
+        System.out.println("is_accepted: " + answer.getIsAccepted());
 
         // 2. 이미 삭제된 답변인지 확인
         if (answer.getIsDeleted()) {
@@ -116,6 +125,7 @@ public class AnswerService {
 
         // 3. 작성자 본인 확인
         if (!answer.getUser().getId().equals(userId)) {
+            System.out.println("❌ 권한 없음: answer.user_id=" + answer.getUser().getId() + ", request userId=" + userId);
             throw new IllegalArgumentException("자신의 답변만 삭제할 수 있습니다.");
         }
 
@@ -126,6 +136,8 @@ public class AnswerService {
 
         // 5. Soft Delete (is_deleted = true)
         answer.setIsDeleted(true);
+
+        System.out.println("✅ 답변 삭제 성공!");
 
         // 6. 응답 DTO 생성
         return AnswerDeleteResponseDto.builder()
