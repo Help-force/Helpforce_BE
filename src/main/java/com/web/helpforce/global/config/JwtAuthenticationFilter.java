@@ -22,10 +22,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, 
-                                    HttpServletResponse response, 
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        
+
         try {
             // 1. Request Header에서 JWT 토큰 추출
             String jwt = getJwtFromRequest(request);
@@ -36,13 +36,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Long userId = jwtTokenProvider.getUserId(jwt);
 
                 // 4. Spring Security 인증 객체 생성
-                UsernamePasswordAuthenticationToken authentication = 
-                    new UsernamePasswordAuthenticationToken(
-                        userId,  // principal (인증된 사용자 정보)
-                        null,    // credentials (비밀번호는 필요 없음)
-                        new ArrayList<>()  // authorities (권한 목록, 현재는 빈 리스트)
-                    );
-                
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userId,  // principal (인증된 사용자 정보)
+                                null,    // credentials (비밀번호는 필요 없음)
+                                new ArrayList<>()  // authorities (권한 목록, 현재는 빈 리스트)
+                        );
+
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 // 5. SecurityContext에 인증 정보 저장
@@ -58,11 +58,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // Request Header에서 "Bearer {token}" 형식의 토큰 추출
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        
+
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7); // "Bearer " 이후의 토큰 부분만 반환
         }
-        
+
         return null;
     }
 }

@@ -3,19 +3,26 @@ package com.web.helpforce.domain.question.service;
 import com.web.helpforce.domain.attachment.service.FileStorageService;
 import com.web.helpforce.domain.question.dto.QuestionCreateRequest;
 import com.web.helpforce.domain.question.dto.QuestionCreateResponse;
+import com.web.helpforce.domain.question.dto.QuestionDeleteResponse;
 import com.web.helpforce.domain.question.dto.QuestionListPageResponse;
 import com.web.helpforce.domain.question.dto.QuestionListResponse;
+import com.web.helpforce.domain.question.dto.QuestionUpdateRequest;
+import com.web.helpforce.domain.question.dto.QuestionUpdateResponse;
 import com.web.helpforce.domain.attachment.entity.Attachment;
 import com.web.helpforce.domain.question.entity.Question;
 import com.web.helpforce.domain.question.entity.QuestionTag;
 import com.web.helpforce.domain.tag.entity.Tag;
 import com.web.helpforce.domain.attachment.repository.AttachmentRepository;
 import com.web.helpforce.domain.question.repository.QuestionRepository;
+import com.web.helpforce.domain.question.repository.QuestionTagRepository;
 import com.web.helpforce.domain.tag.repository.TagRepository;
 import com.web.helpforce.domain.user.entity.User;
 import com.web.helpforce.domain.answer.repository.AnswerRepository;
 import com.web.helpforce.domain.question.repository.QuestionBookmarkRepository;
 import com.web.helpforce.domain.user.repository.UserRepository;
+import com.web.helpforce.global.exception.ConflictException;
+import com.web.helpforce.global.exception.ForbiddenException;
+import com.web.helpforce.global.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,6 +45,7 @@ public class QuestionService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final QuestionBookmarkRepository questionBookmarkRepository;
+    private final QuestionTagRepository questionTagRepository;
     private final TagRepository tagRepository;
     private final AttachmentRepository attachmentRepository;
     private final FileStorageService fileStorageService;
@@ -224,5 +232,98 @@ public class QuestionService {
                 savedQuestion.getCreatedAt(),
                 attachmentDtos
         );
+    }
+
+    @Transactional
+    public QuestionUpdateResponse updateQuestion(Long questionId, QuestionUpdateRequest request, Long userId) {
+        // 1. 질문 조회
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new NotFoundException("질문을 찾을 수 없습니다."));
+
+        // 2. 삭제된 질문인지 확인
+        if (question.getIsDeleted()) {
+            throw new NotFoundException("삭제된 질문은 수정할 수 없습니다.");
+        }
+
+        // 3. 작성자 권한 확인
+        if (!question.getUser().getId().equals(userId)) {
+            throw new ForbiddenException("자신의 질문만 수정할 수 있습니다.");
+        }
+
+        // 4. 제목 검증
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("제목은 필수 입력 항목입니다.");
+        }
+
+        // 5. 내용 검증
+        if (request.getBody() == null || request.getBody().trim().isEmpty()) {
+            throw new IllegalArgumentException("내용은 필수 입력 항목입니다.");
+        }
+
+        // 6. 질문 정보 수정
+        question.setTitle(request.getTitle());
+        question.setBody(request.getBody());
+
+        // 7. 태그 수정 (기존 태그 완전히 삭제 후 새로 추가)
+        questionTagRepository.deleteByQuestionId(questionId);
+
+        // 변경사항 즉시 반영
+        questionRepository.flush();
+
+        if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
+            List<Tag> tags = tagRepository.findByIdIn(request.getTagIds());
+
+            for (Tag tag : tags) {
+                QuestionTag questionTag = QuestionTag.builder()
+                        .question(question)
+                        .tag(tag)
+                        .build();
+                questionTagRepository.save(questionTag);
+            }
+        }
+
+        // 8. 질문 다시 조회해서 최신 상태로 응답
+        Question updatedQuestion = questionRepository.findById(questionId)
+                .orElseThrow(() -> new NotFoundException("질문을 찾을 수 없습니다."));
+
+        // 9. 응답 생성
+        List<Long> tagIds = updatedQuestion.getQuestionTags().stream()
+                .map(qt -> qt.getTag().getId())
+                .collect(Collectors.toList());
+
+        return QuestionUpdateResponse.of(
+                updatedQuestion.getTitle(),
+                updatedQuestion.getBody(),
+                tagIds
+        );
+    }
+
+    @Transactional
+    public QuestionDeleteResponse deleteQuestion(Long questionId, Long userId) {
+        // 1. 질문 조회
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new NotFoundException("질문을 찾을 수 없습니다."));
+
+        // 2. 이미 삭제된 질문인지 확인
+        if (question.getIsDeleted()) {
+            throw new NotFoundException("질문을 찾을 수 없습니다.");
+        }
+
+        // 3. 작성자 권한 확인
+        if (!question.getUser().getId().equals(userId)) {
+            throw new ForbiddenException("자신의 질문만 삭제할 수 있습니다.");
+        }
+
+        // 4. 채택된 답변이 있는지 확인
+        if (question.getAcceptedAnswerId() != null) {
+            throw new ConflictException("채택된 답변이 있는 질문은 삭제할 수 없습니다.");
+        }
+
+        // 5. Soft Delete 처리
+        question.setIsDeleted(true);
+        questionRepository.save(question);
+
+        // 6. 응답 반환
+        return QuestionDeleteResponse.of("질문이 삭제되었습니다.", true);
     }
 }

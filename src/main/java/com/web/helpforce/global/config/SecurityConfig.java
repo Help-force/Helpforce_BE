@@ -1,5 +1,6 @@
 package com.web.helpforce.global.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -8,10 +9,14 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -26,9 +31,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()  // 인증 API는 모두 허용
                         .requestMatchers("/h2-console/**").permitAll()  // H2 콘솔도 허용
-                        .anyRequest().permitAll()  // ⭐ 일단 모든 요청 허용 (테스트용)
+                        .requestMatchers("/api/questions").permitAll()  // 질문 목록 조회는 허용 (선택적 인증)
+                        .anyRequest().authenticated()  // 나머지는 인증 필요
                 )
-                .headers(headers -> headers.frameOptions(frame -> frame.disable()));  // H2 콘솔용
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))  // H2 콘솔용
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);  // JWT 필터 추가
 
         return http.build();
     }
