@@ -4,6 +4,7 @@ import com.web.helpforce.domain.answer.dto.AnswerCreateRequestDto;
 import com.web.helpforce.domain.answer.dto.AnswerCreateResponseDto;
 import com.web.helpforce.domain.answer.dto.AnswerUpdateRequestDto;
 import com.web.helpforce.domain.answer.dto.AnswerUpdateResponseDto;
+import com.web.helpforce.domain.answer.dto.AnswerDeleteResponseDto;
 import com.web.helpforce.domain.answer.service.AnswerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +60,27 @@ public class AnswerController {
         }
 
         AnswerUpdateResponseDto response = answerService.updateAnswer(answerId, requestDto, userId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // 답변 삭제
+    @DeleteMapping("/answers/{answerId}")
+    public ResponseEntity<AnswerDeleteResponseDto> deleteAnswer(
+            @PathVariable Long answerId,
+            Authentication authentication) {
+
+        // 현재 로그인한 사용자 ID
+        Long userId;
+        if (authentication != null && authentication.isAuthenticated()) {
+            userId = Long.parseLong(authentication.getName());
+        } else {
+            // 임시: 인증 없을 때 기본 사용자 ID 3 사용 (테스트용)
+            userId = 3L;
+            System.out.println("⚠️ Authentication is null, using default userId: 3");
+        }
+
+        AnswerDeleteResponseDto response = answerService.deleteAnswer(answerId, userId);
 
         return ResponseEntity.ok(response);
     }

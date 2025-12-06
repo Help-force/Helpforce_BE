@@ -4,6 +4,7 @@ import com.web.helpforce.domain.answer.dto.AnswerCreateRequestDto;
 import com.web.helpforce.domain.answer.dto.AnswerCreateResponseDto;
 import com.web.helpforce.domain.answer.dto.AnswerUpdateRequestDto;
 import com.web.helpforce.domain.answer.dto.AnswerUpdateResponseDto;
+import com.web.helpforce.domain.answer.dto.AnswerDeleteResponseDto;
 import com.web.helpforce.domain.answer.entity.Answer;
 import com.web.helpforce.domain.answer.repository.AnswerRepository;
 import com.web.helpforce.domain.question.entity.Question;
@@ -99,6 +100,38 @@ public class AnswerService {
                 .id(answer.getId())
                 .body(answer.getBody())
                 .updatedAt(answer.getUpdatedAt())
+                .build();
+    }
+
+    @Transactional
+    public AnswerDeleteResponseDto deleteAnswer(Long answerId, Long userId) {
+        // 1. 답변 조회
+        Answer answer = answerRepository.findById(answerId)
+                .orElseThrow(() -> new IllegalArgumentException("답변을 찾을 수 없습니다."));
+
+        // 2. 이미 삭제된 답변인지 확인
+        if (answer.getIsDeleted()) {
+            throw new IllegalArgumentException("이미 삭제된 답변입니다.");
+        }
+
+        // 3. 작성자 본인 확인
+        if (!answer.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("자신의 답변만 삭제할 수 있습니다.");
+        }
+
+        // 4. 채택된 답변인지 확인 (채택된 답변은 삭제 불가)
+        if (answer.getIsAccepted()) {
+            throw new IllegalArgumentException("채택된 답변은 삭제할 수 없습니다.");
+        }
+
+        // 5. Soft Delete (is_deleted = true)
+        answer.setIsDeleted(true);
+
+        // 6. 응답 DTO 생성
+        return AnswerDeleteResponseDto.builder()
+                .code(200)
+                .message("답변이 삭제되었습니다.")
+                .isDeleted(true)
                 .build();
     }
 }
