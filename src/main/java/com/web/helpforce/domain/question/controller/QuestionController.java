@@ -33,6 +33,8 @@ public class QuestionController {
     @GetMapping
     public ResponseEntity<SuccessResponse<QuestionListPageResponse>> getQuestions(
             @RequestParam(required = false) List<Long> tagIds,
+            @RequestParam(required = false) String searchType,
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "latest") String sort,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -45,7 +47,7 @@ public class QuestionController {
         }
 
         QuestionListPageResponse response = questionService.getQuestions(
-                tagIds, sort, page, size, currentUserId);
+                tagIds, searchType, keyword, sort, page, size, currentUserId);
 
         return ResponseEntity.ok(SuccessResponse.of(response));
     }

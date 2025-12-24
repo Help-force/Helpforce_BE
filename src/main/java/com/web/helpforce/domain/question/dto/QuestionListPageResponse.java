@@ -50,5 +50,11 @@ public class QuestionListPageResponse {
         private List<Long> tagIds;
 
         private String sort;
+
+        @JsonProperty("search_type")
+        private String searchType;
+
+        @JsonProperty("search_keyword")
+        private String searchKeyword;
     }
 }

@@ -46,20 +46,25 @@ public class AuthService {
 
     @Transactional
     public SignupResponseDto signup(SignupRequestDto requestDto) {
-        // 1. 이메일 중복 체크
+        // 1. 인증코드 검증
+        if (!"CRM101".equals(requestDto.getAuthCode())) {
+            throw new IllegalArgumentException("인증코드가 틀렸습니다.");
+        }
+
+        // 2. 이메일 중복 체크
         if (userRepository.existsByEmail(requestDto.getEmail())) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
 
-        // 2. 닉네임 중복 체크
+        // 3. 닉네임 중복 체크
         if (userRepository.existsByNickname(requestDto.getNickname())) {
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }
 
-        // 3. 비밀번호 암호화
+        // 4. 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
 
-        // 4. User 엔티티 생성
+        // 5. User 엔티티 생성
         User user = User.builder()
                 .email(requestDto.getEmail())
                 .passwordHash(encodedPassword)
@@ -68,10 +73,10 @@ public class AuthService {
                 .department(requestDto.getDepartment())
                 .build();
 
-        // 5. DB 저장
+        // 6. DB 저장
         User savedUser = userRepository.save(user);
 
-        // 6. 응답 반환
+        // 7. 응답 반환
         return SignupResponseDto.of(savedUser.getId(), savedUser.getEmail());
     }
 

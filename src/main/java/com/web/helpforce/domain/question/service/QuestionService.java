@@ -60,6 +60,8 @@ public class QuestionService {
 
     public QuestionListPageResponse getQuestions(
             List<Long> tagIds,
+            String searchType,
+            String keyword,
             String sort,
             int page,
             int size,
@@ -69,14 +71,30 @@ public class QuestionService {
         Sort sortOption = getSortOption(sort);
         Pageable pageable = PageRequest.of(page - 1, size, sortOption);
 
-        // 질문 조회
+        // 질문 조회 - 검색 + 태그 필터 조합
         Page<Question> questionPage;
-        if (tagIds != null && !tagIds.isEmpty()) {
-            // 태그 필터링이 있는 경우
-            questionPage = questionRepository.findByTagIdsAndIsDeletedFalse(tagIds, pageable);
+
+        // 검색어가 있는 경우
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            // 검색 타입이 없으면 기본값 'all'
+            String finalSearchType = (searchType == null || searchType.trim().isEmpty()) ? "all" : searchType.toLowerCase();
+
+            if (tagIds != null && !tagIds.isEmpty()) {
+                // 검색 + 태그 필터
+                questionPage = questionRepository.searchWithTagsAndKeyword(tagIds, finalSearchType, keyword, pageable);
+            } else {
+                // 검색만
+                questionPage = questionRepository.searchByKeyword(finalSearchType, keyword, pageable);
+            }
         } else {
-            // 전체 조회
-            questionPage = questionRepository.findByIsDeletedFalse(pageable);
+            // 검색어가 없는 경우
+            if (tagIds != null && !tagIds.isEmpty()) {
+                // 태그 필터만
+                questionPage = questionRepository.findByTagIdsAndIsDeletedFalse(tagIds, pageable);
+            } else {
+                // 전체 조회
+                questionPage = questionRepository.findByIsDeletedFalse(pageable);
+            }
         }
 
         // DTO 변환
@@ -98,6 +116,8 @@ public class QuestionService {
         QuestionListPageResponse.Filters filters = QuestionListPageResponse.Filters.builder()
                 .tagIds(tagIds)
                 .sort(sort != null ? sort : "latest")
+                .searchType(searchType)
+                .searchKeyword(keyword)
                 .build();
 
         return QuestionListPageResponse.builder()
@@ -399,8 +419,8 @@ public class QuestionService {
         // 3. 질문 정보 생성
         QuestionDetailResponse.QuestionDto questionDto = buildQuestionDto(question, currentUserId);
 
-        // 4. 답변 목록 조회 (댓글만, parent_answer_id가 null인 것)
-        List<Answer> parentAnswers = answerRepository.findByQuestion_IdAndParentAnswerIdIsNullAndIsDeletedFalse(questionId);
+        // 4. 답변 목록 조회 (채택 답변 우선, 그 다음 오래된 순)
+        List<Answer> parentAnswers = answerRepository.findByQuestionIdOrderByAcceptedAndCreatedAt(questionId);
 
         // 5. 답변 DTO 변환 (대댓글 포함)
         List<QuestionDetailResponse.AnswerDto> answerDtos = parentAnswers.stream()

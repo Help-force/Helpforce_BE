@@ -24,6 +24,36 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     Page<Question> findByTagIdsAndIsDeletedFalse(
             @Param("tagIds") List<Long> tagIds,
             Pageable pageable);
+
+    // 키워드 검색 (태그 필터 없음)
+    @Query("SELECT DISTINCT q FROM Question q " +
+           "WHERE q.isDeleted = false " +
+           "AND (" +
+           "  (LOWER(:searchType) = 'title' AND LOWER(q.title) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
+           "  (LOWER(:searchType) = 'body' AND LOWER(q.body) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
+           "  (LOWER(:searchType) = 'all' AND (LOWER(q.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(q.body) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
+           ")")
+    Page<Question> searchByKeyword(
+            @Param("searchType") String searchType,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
+    // 키워드 검색 + 태그 필터
+    @Query("SELECT DISTINCT q FROM Question q " +
+           "JOIN q.questionTags qt " +
+           "WHERE q.isDeleted = false " +
+           "AND qt.tag.id IN :tagIds " +
+           "AND (" +
+           "  (LOWER(:searchType) = 'title' AND LOWER(q.title) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
+           "  (LOWER(:searchType) = 'body' AND LOWER(q.body) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
+           "  (LOWER(:searchType) = 'all' AND (LOWER(q.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(q.body) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
+           ")")
+    Page<Question> searchWithTagsAndKeyword(
+            @Param("tagIds") List<Long> tagIds,
+            @Param("searchType") String searchType,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
     // my question 조회 (페이징)
     Page<Question> findByUser_IdAndIsDeletedFalse(
             Long userId, Pageable pageable);

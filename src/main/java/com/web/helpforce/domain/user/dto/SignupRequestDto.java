@@ -14,4 +14,5 @@ public class SignupRequestDto {
     private String nickname;
     private String crmGeneration;
     private String department;
+    private String authCode;
 }
