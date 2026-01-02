@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/answers")
+@RequestMapping("/answers")
 @RequiredArgsConstructor
 public class AnswerLikeController {
 
@@ -45,7 +45,7 @@ public class AnswerLikeController {
      * GET /api/answers/{answerId}/likes
      * 답변 좋아요 개수 조회
      */
-    @GetMapping("/{answerId}/likes")
+    @GetMapping("/{answerId}")
     public ResponseEntity<Map<String, Object>> getAnswerLikeCount(
             @PathVariable Long answerId) {
 
