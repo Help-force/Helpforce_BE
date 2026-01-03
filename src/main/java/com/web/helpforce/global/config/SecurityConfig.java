@@ -29,8 +29,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())  // CSRF 비활성화
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()  // 인증 API는 모두 허용
-                        .anyRequest().authenticated()  // 나머지는 인증 필요
+                        .requestMatchers("/**").permitAll()  // 인증 API는 모두 허용
                 )
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))  // H2 콘솔용
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);  // JWT 필터 추가
