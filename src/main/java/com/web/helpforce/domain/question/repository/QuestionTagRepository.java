@@ -11,7 +11,7 @@ import java.util.List;
 public interface QuestionTagRepository extends JpaRepository<QuestionTag, Long> {
     
     // 특정 질문의 모든 태그 삭제
-    void deleteByQuestionId(Long questionId);
+    void deleteByQuestion_Id(Long questionId);
     
     // 각 태그별 사용 횟수 조회
     @Query("SELECT qt.tag.id, COUNT(qt) " +

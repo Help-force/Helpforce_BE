@@ -54,7 +54,6 @@ public class QuestionListPageResponse {
         @JsonProperty("search_type")
         private String searchType;
 
-        @JsonProperty("search_keyword")
-        private String searchKeyword;
+        private String keyword;
     }
 }

@@ -25,10 +25,10 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
            "AND a.parentAnswerId IS NULL " +
            "AND a.isDeleted = false " +
            "ORDER BY a.isAccepted DESC, a.createdAt ASC")
-    List<Answer> findByQuestionIdOrderByAcceptedAndCreatedAt(@Param("questionId") Long questionId);
+    List<Answer> findByQuestionIdOrderByAcceptedAndCreatedAt(Long questionId);
 
     // 특정 답변의 대댓글 조회
-    List<Answer> findByParentAnswerIdAndIsDeletedFalse(Long parentAnswerId);
+    List<Answer> findByParentAnswerIdAndIsDeletedFalseOrderByCreatedAtAsc(Long parentAnswerId);
 
     // 사용자별 답변 조회
     Page<Answer> findByUser_IdAndIsDeletedFalseOrderByCreatedAtDesc(Long userId, Pageable pageable);
