@@ -24,18 +24,13 @@ public class UserController {
         return Long.parseLong(authentication.getName());
     }
 
-    private int toPageIndex(int page) {
-        return Math.max(page - 1, 0);
-    }
-
     @GetMapping("/questions")
     public ResponseEntity<MyQuestionsResponse> getMyQuestions(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             Authentication authentication) {
-
         Long currentUserId = requireUserId(authentication);
-        MyQuestionsResponse response = userService.getMyQuestions(currentUserId, toPageIndex(page), size);
+        MyQuestionsResponse response = userService.getMyQuestions(currentUserId, page, size);  // ✅
         return ResponseEntity.ok(response);
     }
 
@@ -44,9 +39,8 @@ public class UserController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             Authentication authentication) {
-
         Long currentUserId = requireUserId(authentication);
-        MyAnsweredQuestionsResponse response = userService.getMyAnsweredQuestions(currentUserId, toPageIndex(page), size);
+        MyAnsweredQuestionsResponse response = userService.getMyAnsweredQuestions(currentUserId, page, size);  // ✅
         return ResponseEntity.ok(response);
     }
 
@@ -55,9 +49,8 @@ public class UserController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             Authentication authentication) {
-
         Long currentUserId = requireUserId(authentication);
-        BookmarkedQuestionsResponse response = userService.getBookmarkedQuestions(currentUserId, toPageIndex(page), size);
+        BookmarkedQuestionsResponse response = userService.getBookmarkedQuestions(currentUserId, page, size);  // ✅
         return ResponseEntity.ok(response);
     }
 }
