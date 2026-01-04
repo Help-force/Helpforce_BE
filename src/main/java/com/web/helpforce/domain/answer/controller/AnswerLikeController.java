@@ -2,6 +2,7 @@ package com.web.helpforce.domain.answer.controller;
 
 import com.web.helpforce.domain.answer.dto.AnswerLikeResponseDto;
 import com.web.helpforce.domain.answer.service.AnswerLikeService;
+import com.web.helpforce.global.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -31,9 +32,7 @@ public class AnswerLikeController {
         if (authentication != null && authentication.isAuthenticated()) {
             userId = Long.parseLong(authentication.getName());
         } else {
-            // 임시: 인증 없을 때 기본 사용자 ID 3 사용 (테스트용)
-            userId = 3L;
-            System.out.println("⚠️ Authentication is null, using default userId: 3");
+            throw new UnauthorizedException("로그인이 필요합니다.");  // ✅
         }
 
         AnswerLikeResponseDto response = answerLikeService.toggleAnswerLike(answerId, userId);
@@ -45,7 +44,7 @@ public class AnswerLikeController {
      * GET /api/answers/{answerId}/likes
      * 답변 좋아요 개수 조회
      */
-    @GetMapping("/{answerId}")
+    @GetMapping("/{answerId}/likes")
     public ResponseEntity<Map<String, Object>> getAnswerLikeCount(
             @PathVariable Long answerId) {
 

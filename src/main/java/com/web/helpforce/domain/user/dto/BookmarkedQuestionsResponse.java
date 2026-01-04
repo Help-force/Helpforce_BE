@@ -15,7 +15,9 @@ import java.util.List;
 @AllArgsConstructor
 public class BookmarkedQuestionsResponse {
 
+    @JsonProperty("questions")
     private List<BookmarkedQuestionDto> bookmarks;
+
     private PaginationDto pagination;
 
     @Getter

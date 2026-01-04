@@ -1,5 +1,6 @@
 package com.web.helpforce.domain.question.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,6 +15,9 @@ public class QuestionCreateRequest {
 
     private String title;
     private String body;
+
+    @JsonProperty("tag_ids")
     private List<Long> tagIds;
+
     private List<MultipartFile> files;
 }

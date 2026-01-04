@@ -24,12 +24,12 @@ public class AnswerController {
     // 답변 등록 (댓글/대댓글)
     @PostMapping("/questions/{question_id}/answers")
     public ResponseEntity<AnswerCreateResponseDto> createAnswer(
-            @PathVariable Long questionId,
+            @PathVariable("question_id") Long questionId,
             @Valid @RequestBody AnswerCreateRequestDto requestDto,
             Authentication authentication) {
 
         // 현재 로그인한 사용자 ID
-        if (authentication == null || authentication.isAuthenticated()) {
+        if (authentication == null || !authentication.isAuthenticated()) {
             throw new UnauthorizedException("로그인이 필요합니다.");
         }
 
@@ -47,7 +47,7 @@ public class AnswerController {
             Authentication authentication) {
 
         // 현재 로그인한 사용자 ID
-        if (authentication == null || authentication.isAuthenticated()) {
+        if (authentication == null || !authentication.isAuthenticated()) {
             throw new UnauthorizedException("로그인이 필요합니다.");
         }
 
@@ -64,7 +64,7 @@ public class AnswerController {
             Authentication authentication) {
 
         // 현재 로그인한 사용자 ID
-        if (authentication == null || authentication.isAuthenticated()) {
+        if (authentication == null || !authentication.isAuthenticated()) {
             throw new UnauthorizedException("로그인이 필요합니다.");
         }
 

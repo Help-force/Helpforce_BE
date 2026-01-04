@@ -1,15 +1,6 @@
 package com.web.helpforce.domain.question.controller;
 
-import com.web.helpforce.domain.question.dto.AcceptAnswerRequest;
-import com.web.helpforce.domain.question.dto.AcceptAnswerResponse;
-import com.web.helpforce.domain.question.dto.QuestionCreateRequest;
-import com.web.helpforce.domain.question.dto.QuestionCreateResponse;
-import com.web.helpforce.domain.question.dto.QuestionDeleteResponse;
-import com.web.helpforce.domain.question.dto.QuestionDetailResponse;
-import com.web.helpforce.domain.question.dto.QuestionListPageResponse;
-import com.web.helpforce.domain.question.dto.QuestionUpdateRequest;
-import com.web.helpforce.domain.question.dto.QuestionUpdateResponse;
-import com.web.helpforce.domain.question.dto.QuestionViewResponseDto;
+import com.web.helpforce.domain.question.dto.*;
 import com.web.helpforce.domain.question.service.QuestionService;
 import com.web.helpforce.domain.user.dto.SuccessResponse;
 import com.web.helpforce.global.exception.UnauthorizedException;
@@ -24,30 +15,42 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping("/questions")
+@RequestMapping("/questions") // 필요하면 "/api/questions"로 통일
 @RequiredArgsConstructor
 public class QuestionController {
 
     private final QuestionService questionService;
 
+    private Long getOptionalUserId(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) return null;
+        try {
+            return Long.parseLong(authentication.getName()); // JwtAuthenticationFilter 기준 "userId"
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private Long requireUserId(Authentication authentication) {
+        Long userId = getOptionalUserId(authentication);
+        if (userId == null) throw new UnauthorizedException("로그인이 필요합니다.");
+        return userId;
+    }
+
     @GetMapping
     public ResponseEntity<SuccessResponse<QuestionListPageResponse>> getQuestions(
-            @RequestParam(required = false) List<Long> tagIds,
-            @RequestParam(required = false) String searchType,
+            @RequestParam(name = "tag_ids", required = false) List<Long> tagIds,
+            @RequestParam(name = "search_type", required = false) String searchType,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "latest") String sort,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
-            Authentication authentication) {
-
-        // 현재 로그인한 유저 ID (북마크 확인용) - 선택적 인증
-        Long currentUserId = null;
-        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof Long) {
-            currentUserId = (Long) authentication.getPrincipal();
-        }
+            Authentication authentication
+    ) {
+        Long currentUserId = getOptionalUserId(authentication);
 
         QuestionListPageResponse response = questionService.getQuestions(
-                tagIds, searchType, keyword, sort, page, size, currentUserId);
+                tagIds, searchType, keyword, sort, page, size, currentUserId
+        );
 
         return ResponseEntity.ok(SuccessResponse.of(response));
     }
@@ -56,37 +59,31 @@ public class QuestionController {
     public ResponseEntity<QuestionCreateResponse> createQuestion(
             @RequestParam("title") String title,
             @RequestParam("body") String body,
-            @RequestParam(value = "tagIds", required = false) List<Long> tagIds,
+            @RequestParam(name = "tag_ids", required = false) List<Long> tagIds,
             @RequestParam(value = "files", required = false) List<MultipartFile> files,
-            Authentication authentication) {
+            Authentication authentication
+    ) {
+        Long currentUserId = requireUserId(authentication);
 
-        // JWT에서 userId 추출
-        if (authentication == null || !(authentication.getPrincipal() instanceof Long)) {
-            throw new UnauthorizedException("로그인이 필요합니다.");
-        }
-        Long currentUserId = (Long) authentication.getPrincipal();
-
-        // DTO 생성
         QuestionCreateRequest request = new QuestionCreateRequest(title, body, tagIds, files);
-
         QuestionCreateResponse response = questionService.createQuestion(request, currentUserId);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PatchMapping("/{questionId}")
+    @PatchMapping(value = "/{questionId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<QuestionUpdateResponse> updateQuestion(
             @PathVariable Long questionId,
-            @RequestBody QuestionUpdateRequest request,
-            Authentication authentication) {
+            @RequestParam("title") String title,
+            @RequestParam("body") String body,
+            @RequestParam(name = "tag_ids", required = false) List<Long> tagIds,
+            @RequestParam(value = "files", required = false) List<MultipartFile> files,
+            Authentication authentication
+    ) {
+        Long currentUserId = requireUserId(authentication);
 
-        // JWT에서 userId 추출
-        if (authentication == null || !(authentication.getPrincipal() instanceof Long)) {
-            throw new UnauthorizedException("로그인이 필요합니다.");
-        }
-        Long currentUserId = (Long) authentication.getPrincipal();
-
-        QuestionUpdateResponse response = questionService.updateQuestion(questionId, request, currentUserId);
+        QuestionUpdateResponse response =
+                questionService.updateQuestion(questionId, title, body, tagIds, files, currentUserId);
 
         return ResponseEntity.ok(response);
     }
@@ -94,69 +91,37 @@ public class QuestionController {
     @DeleteMapping("/{questionId}")
     public ResponseEntity<QuestionDeleteResponse> deleteQuestion(
             @PathVariable Long questionId,
-            Authentication authentication) {
-
-        // JWT에서 userId 추출
-        if (authentication == null || !(authentication.getPrincipal() instanceof Long)) {
-            throw new UnauthorizedException("로그인이 필요합니다.");
-        }
-        Long currentUserId = (Long) authentication.getPrincipal();
-
-        QuestionDeleteResponse response = questionService.deleteQuestion(questionId, currentUserId);
-
-        return ResponseEntity.ok(response);
+            Authentication authentication
+    ) {
+        Long currentUserId = requireUserId(authentication);
+        return ResponseEntity.ok(questionService.deleteQuestion(questionId, currentUserId));
     }
 
     @PostMapping("/{questionId}/accept-answer")
     public ResponseEntity<AcceptAnswerResponse> acceptAnswer(
             @PathVariable Long questionId,
             @RequestBody AcceptAnswerRequest request,
-            Authentication authentication) {
-
-        // JWT에서 userId 추출
-        if (authentication == null || !(authentication.getPrincipal() instanceof Long)) {
-            throw new UnauthorizedException("로그인이 필요합니다.");
-        }
-        Long currentUserId = (Long) authentication.getPrincipal();
-
-        AcceptAnswerResponse response = questionService.acceptAnswer(questionId, request, currentUserId);
-
-        return ResponseEntity.ok(response);
+            Authentication authentication
+    ) {
+        Long currentUserId = requireUserId(authentication);
+        return ResponseEntity.ok(questionService.acceptAnswer(questionId, request, currentUserId));
     }
 
     @GetMapping("/{questionId}")
     public ResponseEntity<QuestionDetailResponse> getQuestionDetail(
             @PathVariable Long questionId,
-            Authentication authentication) {
-
-        // 현재 로그인한 유저 ID (선택적 인증)
-        Long currentUserId = null;
-        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof Long) {
-            currentUserId = (Long) authentication.getPrincipal();
-        }
-
-        QuestionDetailResponse response = questionService.getQuestionDetail(questionId, currentUserId);
-
-        return ResponseEntity.ok(response);
+            Authentication authentication
+    ) {
+        Long currentUserId = getOptionalUserId(authentication);
+        return ResponseEntity.ok(questionService.getQuestionDetail(questionId, currentUserId));
     }
 
-    /**
-     * POST /api/questions/{questionId}/views
-     * 질문 조회수 증가
-     */
     @PostMapping("/{questionId}/views")
     public ResponseEntity<QuestionViewResponseDto> incrementViews(
             @PathVariable Long questionId,
-            Authentication authentication) {
-
-        // JWT에서 userId 추출
-        if (authentication == null || !(authentication.getPrincipal() instanceof Long)) {
-            throw new UnauthorizedException("인증이 필요합니다.");
-        }
-        Long currentUserId = (Long) authentication.getPrincipal();
-
-        QuestionViewResponseDto response = questionService.incrementViews(questionId, currentUserId);
-
-        return ResponseEntity.ok(response);
+            Authentication authentication
+    ) {
+        Long currentUserId = requireUserId(authentication);
+        return ResponseEntity.ok(questionService.incrementViews(questionId, currentUserId));
     }
 }

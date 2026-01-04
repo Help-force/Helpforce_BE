@@ -10,7 +10,7 @@ import lombok.*;
 @Builder
 public class LoginResponseDto {
 
-    @JsonProperty("accessToken")
+    @JsonProperty("access_token")
     private String accessToken;
 
     private UserInfoDto user;

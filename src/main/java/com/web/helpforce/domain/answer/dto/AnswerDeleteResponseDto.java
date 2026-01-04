@@ -14,5 +14,7 @@ public class AnswerDeleteResponseDto {
 
     private Integer code;
     private String message;
+
+    @JsonProperty("is_deleted")
     private Boolean isDeleted;
 }

@@ -15,9 +15,17 @@ import java.time.LocalDateTime;
 public class AnswerCreateResponseDto {
 
     private Long id;
+
+    @JsonProperty("question_id")
     private Long questionId;
+
+    @JsonProperty("user_id")
     private Long userId;
     private String body;
+
+    @JsonProperty("parent_answer_id")
     private Long parentAnswerId;
+
+    @JsonProperty("created_at")
     private LocalDateTime createdAt;
 }

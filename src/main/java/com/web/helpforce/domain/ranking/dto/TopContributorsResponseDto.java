@@ -1,5 +1,6 @@
 package com.web.helpforce.domain.ranking.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,5 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 public class TopContributorsResponseDto {
     private List<TopContributorDto> rankings;
+
+    @JsonProperty("updated_at")
     private LocalDateTime updatedAt;  // 랭킹 갱신 시간
 }

@@ -1,5 +1,6 @@
 package com.web.helpforce.domain.question.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,7 +16,10 @@ import java.util.List;
 public class QuestionCreateResponse {
 
     private Long id;
+
+    @JsonProperty("created_at")
     private LocalDateTime createdAt;
+
     private List<AttachmentDto> attachments;
 
     @Getter
@@ -24,6 +28,8 @@ public class QuestionCreateResponse {
     @Builder
     public static class AttachmentDto {
         private Long id;
+
+        @JsonProperty("file_url")
         private String fileUrl;
 
         public static AttachmentDto of(Long id, String fileUrl) {

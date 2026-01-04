@@ -1,5 +1,6 @@
 package com.web.helpforce.domain.question.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,6 +13,8 @@ import lombok.NoArgsConstructor;
 public class QuestionDeleteResponse {
     
     private String message;
+
+    @JsonProperty("is_deleted")
     private Boolean isDeleted;
     
     public static QuestionDeleteResponse of(String message, Boolean isDeleted) {

@@ -29,6 +29,10 @@ public class BookmarkService {
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new NotFoundException("질문을 찾을 수 없습니다."));
 
+        if (Boolean.TRUE.equals(question.getIsDeleted())) {
+            throw new NotFoundException("질문을 찾을 수 없습니다.");
+        }
+
         // 2. 사용자 존재 확인
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다."));

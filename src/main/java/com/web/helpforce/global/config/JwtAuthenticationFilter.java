@@ -26,29 +26,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        // ✅ 추가: Authorization 헤더/파싱 로그
+        String bearerToken = request.getHeader("Authorization");
+        System.out.println("🔥 Authorization header = " + bearerToken);
+
         try {
             // 1. Request Header에서 JWT 토큰 추출
             String jwt = getJwtFromRequest(request);
+            System.out.println("🔥 Parsed JWT = " + jwt);
 
             // 2. 토큰 검증
             if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
                 // 3. 토큰에서 사용자 ID 추출
                 Long userId = jwtTokenProvider.getUserId(jwt);
+                System.out.println("🔥 JWT valid, userId = " + userId);
 
-                // 4. Spring Security 인증 객체 생성
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                userId,  // principal (인증된 사용자 정보)
-                                null,    // credentials (비밀번호는 필요 없음)
-                                new ArrayList<>()  // authorities (권한 목록, 현재는 빈 리스트)
+                                userId,
+                                null,
+                                new ArrayList<>()
                         );
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                // 5. SecurityContext에 인증 정보 저장
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+            } else {
+                System.out.println("❌ JWT missing or invalid");
             }
         } catch (Exception e) {
+            System.out.println("❌ JWT filter error: " + e.getMessage());
             logger.error("Could not set user authentication in security context", e);
         }
 

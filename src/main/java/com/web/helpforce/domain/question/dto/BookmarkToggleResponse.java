@@ -11,7 +11,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BookmarkToggleResponse {
-
+    @JsonProperty("question_id")
     private Long questionId;
+
+    @JsonProperty("is_bookmarked")
     private Boolean isBookmarked;
 }

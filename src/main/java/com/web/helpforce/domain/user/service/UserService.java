@@ -1,6 +1,7 @@
 package com.web.helpforce.domain.user.service;
 
 import com.web.helpforce.domain.question.entity.Question;
+import com.web.helpforce.domain.question.entity.QuestionBookmark;
 import com.web.helpforce.domain.question.entity.QuestionTag;
 import com.web.helpforce.domain.question.repository.QuestionRepository;
 import com.web.helpforce.domain.user.dto.BookmarkedQuestionsResponse;
@@ -35,15 +36,22 @@ public class UserService {
     private final AnswerRepository answerRepository;
     private final QuestionBookmarkRepository questionBookmarkRepository;
 
+    private int safePageIndex(int page) {
+        return Math.max(page - 1, 0); // 명세서 1-based -> Spring 0-based
+    }
+
+    private int safePageSize(int size) {
+        return Math.max(size, 1);
+    }
+
     public MyQuestionsResponse getMyQuestions(Long userId, int page, int size) {
         // 1. 사용자 존재 확인
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다."));
+        int pageIndex = safePageIndex(page);
+        int pageSize = safePageSize(size);
 
-        // 2. 페이징 설정 (최신순 정렬)
-        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-
-        // 3. 내가 작성한 질문 조회
+        Pageable pageable = PageRequest.of(pageIndex, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Question> questionPage = questionRepository.findByUser_IdAndIsDeletedFalse(userId, pageable);
 
         // 4. DTO 변환
@@ -85,10 +93,10 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다."));
 
-        // 2. 페이징 설정
-        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        int pageIndex = safePageIndex(page);
+        int pageSize = safePageSize(size);
 
-        // 3. 내가 답변한 모든 답변 조회 (댓글 + 대댓글)
+        Pageable pageable = PageRequest.of(pageIndex, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Answer> myAnswers = answerRepository.findByUser_IdAndIsDeletedFalseOrderByCreatedAtAsc(userId, pageable);
 
         // 4. 질문별로 그룹핑하여 가장 먼저 작성한 답변만 선택
@@ -186,8 +194,11 @@ public class UserService {
     }
 
     public BookmarkedQuestionsResponse getBookmarkedQuestions(Long userId, int page, int size) {
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<com.web.helpforce.domain.question.entity.QuestionBookmark> bookmarkPage = 
+        int pageIndex = safePageIndex(page);
+        int pageSize = safePageSize(size);
+
+        Pageable pageable = PageRequest.of(pageIndex, pageSize);
+        Page<QuestionBookmark> bookmarkPage =
                 questionBookmarkRepository.findByUser_IdOrderByCreatedAtDesc(userId, pageable);
 
         List<BookmarkedQuestionsResponse.BookmarkedQuestionDto> bookmarks = bookmarkPage.getContent().stream()
